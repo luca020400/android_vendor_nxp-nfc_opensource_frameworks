@@ -270,7 +270,7 @@ public class NQApduServiceInfo extends ApduServiceInfo implements Parcelable {
             mNfcid2s = new ArrayList<String>();
 
             final int depth = parser.getDepth();
-            NQAidGroup.ApduPatternGroup currApduPatternGroup = null;
+            NQAidGroup.ApduPatternGroup currNQApduPatternGroup = null;
             Nfcid2Group currentNfcid2Group = null;
 
             // Parsed values for the current AID group
@@ -278,23 +278,23 @@ public class NQApduServiceInfo extends ApduServiceInfo implements Parcelable {
                     && eventType != XmlPullParser.END_DOCUMENT) {
                 tagName = parser.getName();
                 if (!onHost && eventType == XmlPullParser.START_TAG && "apdu-pattern-group".equals(tagName) &&
-                    currApduPatternGroup == null) {
+                    currNQApduPatternGroup == null) {
                     Log.e(TAG, "apdu-pattern-group");
-                    /*final TypedArray groupAttrs = res.obtainAttributes(attrs,
+                   /* final TypedArray groupAttrs = res.obtainAttributes(attrs,
                             com.android.internal.R.styleable.ApduPatternGroup);
                     String groupDescription = groupAttrs.getString(
                             com.android.internal.R.styleable.ApduPatternGroup_description);
-                    NQAidGroup aidGroup = mStaticNQAidGroups.get(CardEmulation.CATEGORY_OTHER);
-                    currApduPatternGroup = new NQAidGroup.ApduPatternGroup(groupDescription);
+                    NQAidGroup nqAidGroup = mStaticNQAidGroups.get(CardEmulation.CATEGORY_OTHER);
+                    currNQApduPatternGroup = new NQAidGroup.ApduPatternGroup(groupDescription);
                     groupAttrs.recycle();*/
                 } else if (!onHost && eventType == XmlPullParser.END_TAG && "apdu-pattern-group".equals(tagName) &&
-                    currApduPatternGroup != null) {
-                    if(currApduPatternGroup.getApduPattern().size() > 0x00) {
-                        mStaticNQAidGroups.get(CardEmulation.CATEGORY_OTHER).addApduGroup(currApduPatternGroup);
+                    currNQApduPatternGroup != null) {
+                    if(currNQApduPatternGroup.getApduPattern().size() > 0x00) {
+                        mStaticNQAidGroups.get(CardEmulation.CATEGORY_OTHER).addApduGroup(currNQApduPatternGroup);
                     }
                     Log.e(TAG, "apdu-pattern-group end");
                 } else if (!onHost && eventType == XmlPullParser.START_TAG && "apdu-pattern-filter".equals(tagName) &&
-                    currApduPatternGroup != null) {
+                    currNQApduPatternGroup != null) {
                     /*
                     final TypedArray a = res.obtainAttributes(attrs,
                             com.android.internal.R.styleable.ApduPatternFilter);
@@ -313,7 +313,7 @@ public class NQApduServiceInfo extends ApduServiceInfo implements Parcelable {
                     Log.e(TAG, "valid apdu pattern"+ reference_data+mask+description);
 
                     a.recycle();
-                    */
+                                        */
                 } else if (eventType == XmlPullParser.START_TAG && "nfcid2-group".equals(tagName) &&
                         currentNfcid2Group == null) {
                     final TypedArray groupAttrs = res.obtainAttributes(attrs,
@@ -441,7 +441,13 @@ public class NQApduServiceInfo extends ApduServiceInfo implements Parcelable {
                 extParser.close();
             }
         }else {
-            mSeExtension = new ESeInfo(-1, 0);
+            if(!onHost) {
+                Log.e(TAG, "SE extension not present, Setting default offhost seID");
+                mSeExtension = new ESeInfo(SECURE_ELEMENT_ROUTE_UICC, 0);
+            }
+            else {
+                mSeExtension = new ESeInfo(-1, 0);
+            }
             mFelicaExtension = new FelicaInfo(null, null);
         }
         if (nfcSeExtParser != null)
@@ -677,7 +683,6 @@ public class NQApduServiceInfo extends ApduServiceInfo implements Parcelable {
         Bitmap bitmap = BitmapFactory.decodeByteArray(mByteArrayBanner, 0, mByteArrayBanner.length);
         return bitmap;
     }
-
     public void setOrReplaceDynamicNQAidGroup(NQAidGroup nqAidGroup) {
         super.setOrReplaceDynamicAidGroup(nqAidGroup);
         mDynamicNQAidGroups.put(nqAidGroup.getCategory(), nqAidGroup);
@@ -700,7 +705,7 @@ public class NQApduServiceInfo extends ApduServiceInfo implements Parcelable {
             if(mBannerResourceId == -1) {
                 banner = new BitmapDrawable((Bitmap)getBitmapBanner());
             } else {
-                banner = res.getDrawable(mBannerResourceId,null);
+                banner = res.getDrawable(mBannerResourceId, null);
             }
             return banner;
         } catch (NotFoundException e) {
@@ -831,7 +836,7 @@ public class NQApduServiceInfo extends ApduServiceInfo implements Parcelable {
             boolean modifiable = source.readInt() != 0;
             NQApduServiceInfo service = new NQApduServiceInfo(info, onHost, description, staticNQAidGroups,
                     dynamicNQAidGroups, requiresUnlock, bannerResource, uid,
-                    settingsActivityName, seExtension, nfcid2Groups, byteArrayBanner,modifiable);
+                    settingsActivityName, seExtension, nfcid2Groups, byteArrayBanner ,modifiable);
             service.setServiceState(CardEmulation.CATEGORY_OTHER, source.readInt());
             return service;
         }
